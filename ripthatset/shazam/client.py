@@ -30,8 +30,7 @@ class FastShazam:
         while retry_count < self._config.max_retries:
             try:
                 return await self._shazam.recognize(
-                    audio_bytes,
-                    proxy=self._config.proxy
+                    audio_bytes, proxy=self._config.proxy
                 )
             except (aiohttp.ClientError, json.JSONDecodeError) as e:
                 retry_count += 1
@@ -65,4 +64,4 @@ class FastShazam:
     async def close(self):
         """Clean up resources."""
         if self._session and not self._session.closed:
-            await self._session.close()
+            self._session.close()

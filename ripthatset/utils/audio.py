@@ -8,7 +8,7 @@ def split_audio(
     audio_path: Path,
     output_dir: Path,
     segment_duration: float,
-    pattern: str = "segment_%d.mp3"
+    pattern: str = "segment_%d.mp3",
 ) -> List[Path]:
     """
     Split audio file into segments using ffmpeg.
@@ -39,12 +39,15 @@ def split_audio(
             "-loglevel",
             "quiet",
         ],
-        check=True
+        check=True,
     )
 
     return sorted(Path(output_dir).glob("segment_*.mp3"))
 
-def calculate_optimal_batch_size(total_segments: int, cpu_count: int = None) -> int:
+
+def calculate_optimal_batch_size(
+    total_segments: int, cpu_count: int | None = None
+) -> int:
     """
     Calculate optimal batch size based on total segments and system resources.
 
@@ -72,10 +75,12 @@ def calculate_optimal_batch_size(total_segments: int, cpu_count: int = None) -> 
         base_size = min(50, base_size * 1.5)
 
     # Final adjustments
-    batch_size = int(min(
-        base_size,
-        total_segments * 0.1,  # Don't exceed 10% of total segments
-        50  # Hard cap at 50
-    ))
+    batch_size = int(
+        min(
+            base_size,
+            total_segments * 0.1,  # Don't exceed 10% of total segments
+            50,  # Hard cap at 50
+        )
+    )
 
     return max(5, batch_size)  # Never go below 5

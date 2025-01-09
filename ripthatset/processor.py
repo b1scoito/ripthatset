@@ -17,7 +17,7 @@ async def recognize_segment(
     segment_path: Path,
     segment_number: int,
     segment_length: int,
-) -> Dict:
+) -> Dict | None:
     """Process a single audio segment."""
     try:
         start_time = time.time()
@@ -76,8 +76,11 @@ async def process_segments(
         )
 
         total_segments = len(segment_files)
+        cpu_count = (
+            process_config.cpu_count if process_config.cpu_count is not None else 1
+        )
         batch_size = process_config.batch_size or calculate_optimal_batch_size(
-            total_segments, process_config.cpu_count
+            total_segments, cpu_count
         )
         progress = ProgressTracker(total_segments)
 
