@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from rich.console import Console
+from rich.theme import Theme
 from typing_extensions import Annotated
 
 from ripthatset.config import (
@@ -14,6 +16,13 @@ from ripthatset.config import (
 )
 from ripthatset.processor import process_segments
 from ripthatset.utils.gaps import find_gaps
+
+# Initialize Rich console with custom theme
+console = Console(
+    theme=Theme(
+        {"info": "cyan", "warning": "yellow", "error": "red", "success": "green"}
+    )
+)
 
 app = typer.Typer()
 
@@ -49,7 +58,7 @@ def recognize(
     Recognize songs in an audio file using Shazam API with customizable parameters.
     """
     if not audio_file.exists():
-        typer.echo(f"File {audio_file} does not exist")
+        console.print(f"[error]File {audio_file} does not exist[/error]")
         raise typer.Exit(1)
 
     # Create configurations
@@ -80,7 +89,9 @@ def recognize(
         if output_config.json_file:
             with open(output_config.json_file, "w") as f:
                 json.dump(results["tracklist"], f, indent=2)
-                typer.echo(f"\nResults saved to {output_config.json_file}")
+                console.print(
+                    f"\n[success]Results saved to {output_config.json_file}[/success]"
+                )
 
         # Find gaps if enabled
         if output_config.show_gaps:
@@ -93,59 +104,45 @@ def recognize(
         else:
             gaps = []
 
-        # Output formatted tracklist
-        print_tracklist(results["tracklist"], gaps, output_config)
+        # Print final tracklist
+        console.print("\n[info]Final Tracklist:[/info]")
 
-        # Print statistics
-        print_statistics(results["stats"])
-
-    except Exception as e:
-        typer.echo(f"Error processing file: {str(e)}")
-        raise typer.Exit(1)
-
-
-def print_tracklist(tracklist: dict, gaps: list, config: OutputConfig) -> None:
-    """Print formatted tracklist with optional gaps."""
-    typer.echo("\nFinal Tracklist:")
-
-    try:
-        # Merge tracks and gaps and sort by timestamp
-        all_tracks = list(tracklist.values()) + gaps
+        # Merge and sort tracks and gaps
+        all_tracks = list(results["tracklist"].values()) + gaps
         sorted_tracks = sorted(all_tracks, key=lambda x: x["timestamp"])
 
         for i, track in enumerate(sorted_tracks, 1):
-            timestamp = track["timestamp"]  # timestamp is now in seconds
-            minutes = int(timestamp // 60)
-            seconds = int(timestamp % 60)
+            minutes = int(track["timestamp"] // 60)
+            seconds = int(track["timestamp"] % 60)
 
             if track.get("is_gap"):
                 duration_minutes = int(track["duration"] // 60)
                 duration_seconds = int(track["duration"] % 60)
-                typer.echo(
-                    f"{i}. ID - ID "
+                console.print(
+                    f"[warning]{i}. ID - ID "
                     f"({minutes:02d}:{seconds:02d}) "
-                    f"[duration: {duration_minutes:02d}:{duration_seconds:02d}]"
+                    f"[duration: {duration_minutes:02d}:{duration_seconds:02d}][/warning]"
                 )
             else:
-                typer.echo(
-                    f"{i}. {track['artist']} - {track['title']} "
+                console.print(
+                    f"[success]{i}. {track['artist']} - {track['title']} "
                     f"({minutes:02d}:{seconds:02d}) "
                     f"[segments: {track['segments']}, "
                     f"confidence: {track['confidence']:.2f}, "
-                    f"total matches: {track['total_matches']}]"
+                    f"total matches: {track['total_matches']}][/success]"
                 )
 
-                if config.verbose:
-                    typer.echo(f"   Clusters: {track['cluster_sizes']}")
+        # Print summary
+        console.print("\n[info]Analysis Summary:[/info]")
+        console.print(f"[info]Total Segments: {results['total_segments']}[/info]")
+        console.print(f"[info]Detected Tracks: {results['detected_tracks']}[/info]")
+        console.print(f"[info]Success Rate: {results['success_rate']:.1f}%[/info]")
+
     except Exception as e:
-        typer.echo(f"Error printing tracklist: {str(e)}")
-        # Continue execution even if printing fails
-
-
-def print_statistics(stats: dict) -> None:
-    """Print processing statistics."""
-    typer.echo(f"\nProcessing completed in {stats['elapsed']:.1f} seconds")
-    typer.echo(f"Success rate: {stats['success_rate']:.1f}%")
+        console.print(f"[error]Error processing file: {str(e)}[/error]")
+        if verbose:
+            console.print_exception()
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":
