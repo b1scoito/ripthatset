@@ -1,16 +1,17 @@
 [tool.poetry]
 name = "ripthatset"
 version = "0.1.0"
-description = ""
+description = "Audio track recognition tool using Shazam API"
 authors = ["biscoito <biscoito@riseup.net>"]
 readme = "README.md"
+packages = [{ include = "ripthatset" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-shazamio = "^0.7.0"
 ipykernel = "^6.29.5"
 typer = "^0.15.1"
 tidalapi = "^0.8.3"
+shazamio = {git = "https://github.com/dotX12/shazamio.git"}
 
 [tool.pyright]
 venvPath = "/Users/biscoito/Library/Caches/pypoetry/virtualenvs"
@@ -19,3 +20,6 @@ venv = "/Users/biscoito/Library/Caches/pypoetry/virtualenvs/ripthatset-81WvY6ol-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+ripthatset = "ripthatset.main:app"
