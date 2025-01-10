@@ -17,7 +17,7 @@ RipThatSet is a powerful command-line tool that uses the Shazam API to analyze a
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ripthatset.git
+git clone https://github.com/b1scoito/ripthatset.git
 cd ripthatset
 
 # Install with Poetry
