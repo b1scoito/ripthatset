@@ -8,7 +8,7 @@ def split_audio(
     audio_path: Path,
     output_dir: Path,
     segment_duration: float,
-    pattern: str = "segment_%d.mp3",
+    pattern: str = "segment_%03d.wav",  # Updated to padded numbering for correct sorting
 ) -> List[Path]:
     """
     Split audio file into segments using ffmpeg.
@@ -16,7 +16,7 @@ def split_audio(
     Args:
         audio_path: Path to input audio file
         output_dir: Directory for output segments
-        segment_duration: Duration of each segment in seconds
+        segment_duration: Duration of each segments in seconds
         pattern: Naming pattern for segments
 
     Returns:
@@ -34,7 +34,9 @@ def split_audio(
             "-segment_time",
             str(segment_duration),
             "-acodec",
-            "copy",
+            "pcm_s16le",
+            "-ar",
+            "44100",
             segment_pattern,
             "-loglevel",
             "quiet",
@@ -42,7 +44,10 @@ def split_audio(
         check=True,
     )
 
-    return sorted(Path(output_dir).glob("segment_*.mp3"))
+    # Ensure natural sorting of segments using zero-padded numbers
+    return sorted(
+        Path(output_dir).glob("segment_*.wav"), key=lambda p: int(p.stem.split("_")[1])
+    )
 
 
 def calculate_optimal_batch_size(

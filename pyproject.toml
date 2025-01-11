@@ -12,6 +12,8 @@ ipykernel = "^6.29.5"
 typer = "^0.15.1"
 tidalapi = "^0.8.3"
 shazamio = {git = "https://github.com/dotX12/shazamio.git"}
+acrcloud = "^14.10.2020"
+aiohttp = "^3.11.11"
 
 [tool.pyright]
 venvPath = "/Users/biscoito/Library/Caches/pypoetry/virtualenvs"

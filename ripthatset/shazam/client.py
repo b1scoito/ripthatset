@@ -36,11 +36,15 @@ class FastShazam:
             f"segment {segment_id}" if segment_id is not None else "current segment"
         )
 
-        while retry_count < self._config.max_retries:
+        while retry_count <= self._config.max_retries:
             try:
-                result = await self._shazam.recognize(
-                    audio_bytes, proxy=self._config.proxy
+                # On last retry, try without proxy
+                proxy = (
+                    None
+                    if retry_count == self._config.max_retries
+                    else self._config.proxy
                 )
+                result = await self._shazam.recognize(audio_bytes, proxy=proxy)
                 # Reset retry count on success
                 if segment_id is not None:
                     self._retries[segment_id] = 0
@@ -72,7 +76,7 @@ class FastShazam:
                 retry_count += 1
                 if retry_count < self._config.max_retries:
                     console.print(
-                        f"[yellow]Recognition error for {segment_str}, "
+                        f"[#E5C07B]⚠ Recognition error for {segment_str}, "
                         f"retrying ({retry_count}/{self._config.max_retries}): "
                         f"{str(e)}[/yellow]"
                     )

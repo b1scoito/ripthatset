@@ -9,6 +9,7 @@ from rich.theme import Theme
 from typing_extensions import Annotated
 
 from ripthatset.config import (
+    ACRCloudConfig,
     OutputConfig,
     ProcessingConfig,
     ShazamConfig,
@@ -53,6 +54,14 @@ def recognize(
     cpu_count: Annotated[
         Optional[int], typer.Option(help="Number of CPU cores to use")
     ] = None,
+    use_acrcloud: Annotated[bool, typer.Option(help="Use ACRCloud as fallback")] = True,
+    acr_access_key: Annotated[
+        Optional[str], typer.Option(help="ACRCloud access key")
+    ] = None,
+    acr_access_secret: Annotated[
+        Optional[str], typer.Option(help="ACRCloud access secret")
+    ] = None,
+    acr_host: Annotated[Optional[str], typer.Option(help="ACRCloud host")] = None,
 ):
     """
     Recognize songs in an audio file using Shazam API with customizable parameters.
@@ -79,10 +88,27 @@ def recognize(
         min_gap_duration=min_gap_duration,
     )
 
+    # Create ACRCloud config if credentials are provided
+    acrcloud_config = None
+    if use_acrcloud and acr_access_key and acr_access_secret:
+        acrcloud_config = ACRCloudConfig(
+            access_key=acr_access_key,
+            access_secret=acr_access_secret,
+            host=acr_host or "identify-us-west-2.acrcloud.com",
+            proxy=proxy,
+        )
+    elif use_acrcloud:
+        console.print(
+            "[warning]ACRCloud fallback requested but credentials not provided. "
+            "Using Shazam only.[/warning]"
+        )
+
     try:
         # Process audio file
         results = asyncio.run(
-            process_segments(audio_file, shazam_config, track_config, process_config)
+            process_segments(
+                audio_file, shazam_config, track_config, process_config, acrcloud_config
+            )
         )
 
         # Save JSON output if requested
@@ -112,21 +138,30 @@ def recognize(
         sorted_tracks = sorted(all_tracks, key=lambda x: x["timestamp"])
 
         for i, track in enumerate(sorted_tracks, 1):
-            minutes = int(track["timestamp"] // 60)
-            seconds = int(track["timestamp"] % 60)
+            timestamp = track["timestamp"]
+            hours = int(timestamp // 3600)
+            minutes = int((timestamp % 3600) // 60)
+            seconds = int(timestamp % 60)
+            time_str = f"{hours:02d}:" if hours > 0 else ""
+            time_str += f"{minutes:02d}:{seconds:02d}"
 
             if track.get("is_gap"):
-                duration_minutes = int(track["duration"] // 60)
-                duration_seconds = int(track["duration"] % 60)
+                duration = track["duration"]
+                duration_hours = int(duration // 3600)
+                duration_minutes = int((duration % 3600) // 60)
+                duration_seconds = int(duration % 60)
+                duration_str = f"{duration_hours:02d}:" if duration_hours > 0 else ""
+                duration_str += f"{duration_minutes:02d}:{duration_seconds:02d}"
+
                 console.print(
                     f"[warning]{i}. ID - ID "
-                    f"({minutes:02d}:{seconds:02d}) "
-                    f"[duration: {duration_minutes:02d}:{duration_seconds:02d}][/warning]"
+                    f"({time_str}) "
+                    f"[duration: {duration_str}][/warning]"
                 )
             else:
                 console.print(
                     f"[success]{i}. {track['artist']} - {track['title']} "
-                    f"({minutes:02d}:{seconds:02d}) "
+                    f"({time_str}) "
                     f"[segments: {track['segments']}, "
                     f"confidence: {track['confidence']:.2f}, "
                     f"total matches: {track['total_matches']}][/success]"

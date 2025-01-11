@@ -4,30 +4,42 @@ from typing import Optional
 
 @dataclass
 class ShazamConfig:
-    max_retries: int = 5
-    retry_delay: int = 1
+    max_retries: int = 7  # Increased retries
+    retry_delay: int = 2  # Increased delay between retries
+    proxy: Optional[str] = None
+
+
+@dataclass
+class ACRCloudConfig:
+    access_key: str
+    access_secret: str
+    host: str = "identify-us-west-2.acrcloud.com"
+    timeout: int = 15  # Increased timeout
+    max_retries: int = 7  # Increased retries
+    retry_delay: int = 2  # Increased delay between retries
     proxy: Optional[str] = None
 
 
 @dataclass
 class TrackMatchConfig:
-    min_segment_matches: int = 2  # Minimum segments to consider a valid track
-    max_segment_gap: int = 3  # Maximum gap between segments in a cluster
-    min_cluster_size: int = 2  # Minimum segments in a cluster
-    min_confidence: float = 0.5  # Minimum confidence score to accept
+    min_segment_matches: int = 3  # Increased minimum segments
+    max_segment_gap: int = 2  # Reduced max gap between segments
+    min_cluster_size: int = 3  # Increased minimum cluster size
+    min_confidence: float = 0.7  # Increased confidence threshold
 
 
 @dataclass
 class ProcessingConfig:
-    segment_length: int = 12000  # Length of each segment in milliseconds
-    min_gap_segments: int = 5  # Minimum segments to consider a gap
-    batch_size: Optional[int] = None  # If None, will be calculated automatically
-    cpu_count: Optional[int] = None  # If None, will use system CPU count
+    segment_length: int = 12000  # Reduced segment length for more granular analysis
+    use_acrcloud_fallback: bool = True
+    min_gap_segments: int = 3  # Reduced minimum gap segments
+    batch_size: Optional[int] = 15  # Smaller batch size for more reliable processing
+    cpu_count: Optional[int] = None
 
 
 @dataclass
 class OutputConfig:
-    json_file: Optional[str] = None  # JSON output file path
-    verbose: bool = False  # Enable verbose output
-    show_gaps: bool = True  # Show gaps in tracklist
-    min_gap_duration: int = 30  # Minimum gap duration in seconds to show
+    json_file: Optional[str] = None
+    verbose: bool = True  # Enabled verbose output by default
+    show_gaps: bool = True
+    min_gap_duration: int = 20  # Reduced minimum gap duration
